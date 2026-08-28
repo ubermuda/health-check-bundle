@@ -19,8 +19,9 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 interface HealthMetadataProvider
 {
     /**
-     * Null-valued fields are dropped, so an absent value means the key simply
-     * does not appear. `status` is the endpoint's own key and is refused.
+     * The fields returned are the fields reported, values included: a provider
+     * that wants a key left out of the payload does not return that key.
+     * `status` is the endpoint's own key and is refused.
      *
      * @return array<string, string|int|bool|null>
      */

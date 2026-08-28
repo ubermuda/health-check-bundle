@@ -119,16 +119,30 @@ final class ShowHealthControllerTest extends TestCase
         );
     }
 
-    public function test_a_null_field_is_dropped_rather_than_reported_as_null(): void
+    public function test_a_null_field_is_reported_as_null_rather_than_dropped(): void
     {
         $response = $this->controller(
             providers: [new StaticMetadataProvider(['version' => null, 'region' => 'ams3'], sensitive: false)],
         )(new Request());
 
         self::assertJsonStringEqualsJsonString(
-            '{"status":"ok","region":"ams3"}',
+            '{"status":"ok","region":"ams3","version":null}',
             (string) $response->getContent(),
         );
+    }
+
+    public function test_a_null_sensitive_field_still_tells_a_trusted_probe_apart_from_a_rejected_one(): void
+    {
+        // An instance carrying no build version answers a token holder with the
+        // key and a null value; a caller whose token was rejected gets a body
+        // that says nothing at all. The two must not be the same bytes.
+        $providers = [new StaticMetadataProvider(['version' => null])];
+
+        $trusted = $this->controller($providers, probeToken: 'right-token')(self::probeRequest('right-token'));
+        self::assertSame('{"status":"ok","version":null}', (string) $trusted->getContent());
+
+        $rejected = $this->controller($providers, probeToken: 'right-token')(self::probeRequest('wrong-token'));
+        self::assertSame('{"status":"ok"}', (string) $rejected->getContent());
     }
 
     public function test_fields_from_several_providers_are_merged_flat(): void
