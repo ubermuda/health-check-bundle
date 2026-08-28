@@ -127,7 +127,10 @@ The rules, all of which the endpoint enforces:
 - **No I/O.** A load balancer hits this every few seconds. No query, no HTTP call, no
   file read per request. Anything that has to look something up is a diagnostic
   check, not metadata.
-- **Null is dropped.** An absent value means the key simply does not appear.
+- **A field's value is reported as it is,** `null` included. A provider that wants
+  a key left out of the payload does not return that key. `{"status":"ok","version":null}`
+  and `{"status":"ok"}` are different answers: the first names an instance carrying
+  no build version, the second is what a caller with the wrong token gets.
 
 The payload is flat: no grouping, no nesting, no ordering guarantees.
 
@@ -295,6 +298,19 @@ The defaults touch no network at all, so a test that does not care about the che
 cannot hang on a socket. `HealthChecks::messengerConnection()` returns an in-memory
 SQLite connection carrying the one table the queue checks read, for tests that do
 care.
+
+For a report that carries your own checks alongside the bundle's, `HealthChecks::checks()`
+returns the same list unwrapped:
+
+```php
+self::getContainer()->set(
+    RunDiagnosticsHandler::class,
+    new RunDiagnosticsHandler([
+        ...HealthChecks::checks($connection),
+        new YourOwnCheck($connection),
+    ]),
+);
+```
 
 ## Requirements
 

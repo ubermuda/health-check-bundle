@@ -98,7 +98,7 @@ final class ShowHealthController
                 }
                 $contributed[$key] = true;
 
-                if (null === $value || ($provider->sensitive() && !$trusted)) {
+                if ($provider->sensitive() && !$trusted) {
                     continue;
                 }
 

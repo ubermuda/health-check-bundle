@@ -19,6 +19,7 @@ use Ubermuda\HealthCheckBundle\Check\MailerTransportCheck;
 use Ubermuda\HealthCheckBundle\Check\MercureCheck;
 use Ubermuda\HealthCheckBundle\Check\WorkerCheck;
 use Ubermuda\HealthCheckBundle\Command\RunDiagnosticsHandler;
+use Ubermuda\HealthCheckBundle\DiagnosticInterface;
 
 /**
  * Builds a real RunDiagnosticsHandler wired to values a test controls, with the
@@ -42,9 +43,33 @@ final class HealthChecks
         ?string $mercureJwtSecret = null,
         ?HttpClientInterface $httpClient = null,
     ): RunDiagnosticsHandler {
+        return new RunDiagnosticsHandler(self::checks(
+            $connection,
+            $mailerDsn,
+            $mailerFromAddress,
+            $mercureUrl,
+            $mercureJwtSecret,
+            $httpClient,
+        ));
+    }
+
+    /**
+     * The same checks, unwrapped, for a report that also carries an
+     * application's own: `new RunDiagnosticsHandler([...HealthChecks::checks($connection), new YourCheck()])`.
+     *
+     * @return list<DiagnosticInterface>
+     */
+    public static function checks(
+        Connection $connection,
+        ?string $mailerDsn = 'null://null',
+        ?string $mailerFromAddress = 'noreply@localhost',
+        ?string $mercureUrl = null,
+        ?string $mercureJwtSecret = null,
+        ?HttpClientInterface $httpClient = null,
+    ): array {
         $logger = new NullLogger();
 
-        return new RunDiagnosticsHandler([
+        return [
             new MailerTransportCheck(
                 new Transport([
                     new NullTransportFactory(),
@@ -58,7 +83,7 @@ final class HealthChecks
             new WorkerCheck($connection, $logger),
             new FailedMessagesCheck($connection, $logger),
             new MercureCheck($httpClient ?? new MockHttpClient(), $mercureUrl, $mercureJwtSecret, $logger),
-        ]);
+        ];
     }
 
     /**
