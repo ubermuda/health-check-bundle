@@ -13,7 +13,7 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 use Ubermuda\HealthCheckBundle\Command\RunDiagnosticsView;
 use Ubermuda\HealthCheckBundle\Diagnostic;
 use Ubermuda\HealthCheckBundle\DiagnosticState;
-use Ubermuda\HealthCheckBundle\Test\Support\HealthChecks;
+use Ubermuda\HealthCheckBundle\Testing\HealthChecks;
 
 /**
  * Runs against a real database so the backlog query — including the way

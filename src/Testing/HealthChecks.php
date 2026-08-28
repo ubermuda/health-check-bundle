@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Ubermuda\HealthCheckBundle\Test\Support;
+namespace Ubermuda\HealthCheckBundle\Testing;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
@@ -27,6 +27,10 @@ use Ubermuda\HealthCheckBundle\Command\RunDiagnosticsHandler;
  * The defaults are the combination that touches no network at all — a null mail
  * transport and no Mercure hub — so a test that does not care about the checks
  * still cannot hang on a socket.
+ *
+ * Shipped rather than kept to the bundle's own suite because it names the
+ * bundle's five checks: a copy in an application stops being the real report
+ * the moment the bundle grows a sixth.
  */
 final class HealthChecks
 {

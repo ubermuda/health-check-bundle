@@ -60,7 +60,7 @@ class HealthCheckTestKernel extends Kernel
         ]);
 
         $container->extension('ubermuda_health_check', [
-            'probe_token' => 'right-token',
+            'probe_token' => $this->probeToken(),
         ]);
 
         $container->services()
@@ -71,6 +71,12 @@ class HealthCheckTestKernel extends Kernel
         // messenger_messages table, so without this the suite's output is that
         // expected warning over and over.
         $container->services()->set('logger', NullLogger::class);
+    }
+
+    /** Overridden by the kernels that boot with a token the bundle has to tolerate. */
+    protected function probeToken(): ?string
+    {
+        return 'right-token';
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void

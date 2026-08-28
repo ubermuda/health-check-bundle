@@ -21,7 +21,9 @@ final readonly class Diagnostic
      *                                                    int `%count%` drives plural selection
      * @param non-empty-string          $domain           translation domain $detail and the check's
      *                                                    `check.<key>.label` are resolved in; a check
-     *                                                    contributed by an application keeps the default
+     *                                                    contributed by an application keeps the default.
+     *                                                    The state names are not in it — see
+     *                                                    DiagnosticState::translationDomain()
      */
     public function __construct(
         public string $key,

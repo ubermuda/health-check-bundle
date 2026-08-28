@@ -32,14 +32,23 @@ use Ubermuda\HealthCheckBundle\HealthMetadataProvider;
 #[AsController]
 final class ShowHealthController
 {
+    /**
+     * `null` is the same answer as `''`: no token is configured, so sensitive
+     * fields never appear. It arrives that way from
+     * `%env(default::HEALTH_PROBE_TOKEN)%`, which resolves an unset or blank
+     * variable to null at runtime rather than at compile time.
+     */
+    private readonly string $probeToken;
+
     /** @param iterable<HealthMetadataProvider> $metadataProviders */
     public function __construct(
         private readonly CheckDatabaseHealthHandler $checkDatabaseHealth,
 
         #[AutowireIterator('ubermuda_health_check.metadata')]
         private readonly iterable $metadataProviders,
-        private readonly string $probeToken = '',
+        ?string $probeToken = null,
     ) {
+        $this->probeToken = $probeToken ?? '';
     }
 
     public function __invoke(Request $request): JsonResponse
