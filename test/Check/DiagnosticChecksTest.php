@@ -10,9 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Ubermuda\HealthCheckBundle\Command\RunDiagnosticsHandler;
 use Ubermuda\HealthCheckBundle\Command\RunDiagnosticsView;
 use Ubermuda\HealthCheckBundle\Diagnostic;
 use Ubermuda\HealthCheckBundle\DiagnosticState;
+use Ubermuda\HealthCheckBundle\Test\Support\ApplicationCheck;
 use Ubermuda\HealthCheckBundle\Testing\HealthChecks;
 
 /**
@@ -270,6 +272,19 @@ final class DiagnosticChecksTest extends TestCase
             'available_at' => Types::DATETIME_IMMUTABLE,
             'delivered_at' => Types::DATETIME_IMMUTABLE,
         ]);
+    }
+
+    public function test_the_shipped_checks_compose_with_an_applications_own(): void
+    {
+        $view = (new RunDiagnosticsHandler([
+            ...HealthChecks::checks($this->connection),
+            new ApplicationCheck(),
+        ]))();
+
+        self::assertSame(
+            ['mailer', 'mailer_sender', 'worker', 'failed_messages', 'mercure', 'application'],
+            array_map(static fn (Diagnostic $check): string => $check->key, $view->checks),
+        );
     }
 
     private static function check(RunDiagnosticsView $view, string $key): Diagnostic
