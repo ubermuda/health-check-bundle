@@ -52,7 +52,7 @@ Both keys are optional; defaults shown:
 # config/packages/ubermuda_health_check.yaml
 ubermuda_health_check:
     path: /healthz     # where the endpoint mounts, when you import the routes
-    probe_token: ''    # empty means sensitive metadata never appears
+    probe_token: ''    # empty or null means sensitive metadata never appears
 ```
 
 `probe_token` is a shared secret a caller presents as an `X-Probe-Token` **header**
@@ -63,6 +63,11 @@ from the environment so it is not in your repository:
 ubermuda_health_check:
     probe_token: '%env(default::HEALTH_PROBE_TOKEN)%'
 ```
+
+`default::` resolves an unset **or blank** variable to `null`, and `null` is the same
+answer as `''`: no token is configured, so sensitive fields never appear. A
+self-hosted `.env` that ships `HEALTH_PROBE_TOKEN=` gets a working endpoint that
+withholds everything, with no `string:` cast in the way.
 
 ## The endpoint
 
@@ -233,6 +238,63 @@ The bundle's own checks pass `UbermudaHealthCheckBundle::TRANSLATION_DOMAIN`
 (`ubermuda_health_check`), whose English catalogue ships in `translations/`. It also
 carries `state.ok`, `state.warning`, `state.unknown` and `state.failed` for rendering
 the states themselves.
+
+#### The state names live in the bundle's catalogue, not the check's
+
+`$domain` is the *check's* domain — where its detail and label are resolved. The four
+state names are the bundle's whoever contributed the row, so a template rendering both
+is reading two catalogues on one line. `DiagnosticState` says which is which, so you
+do not have to hardcode the second one:
+
+```twig
+{% for check in view.checks %}
+    <li>
+        <span>{{ check.state.translationKey|trans({}, check.state.translationDomain) }}</span>
+        <span>{{ ('check.' ~ check.key ~ '.label')|trans({}, check.domain) }}</span>
+        <span>{{ check.detail|trans(check.detailParameters, check.domain) }}</span>
+    </li>
+{% endfor %}
+```
+
+`translationKey()` is `state.<value>` and `translationDomain()` is
+`UbermudaHealthCheckBundle::TRANSLATION_DOMAIN`. Override the messages by declaring
+`state.*` in your own `ubermuda_health_check` catalogue; the domain itself is not
+yours to change.
+
+## Testing against the diagnostics
+
+The real handler opens an SMTP connection and calls the Mercure hub, which is not
+what a functional test should do. Two things make replacing it a one-liner.
+
+**`RunDiagnosticsHandler` is private, and stays replaceable.** With
+`framework.test: true`, the test container swaps private services as happily as public
+ones — there is no need to redeclare it public in your own `services.yaml`:
+
+```php
+self::getContainer()->set(
+    RunDiagnosticsHandler::class,
+    HealthChecks::handler($connection),
+);
+```
+
+**`Testing\HealthChecks` builds the replacement.** It ships in the bundle rather than
+in its test suite, because it names the five checks: a copy in your application stops
+being the real report the moment the bundle grows a sixth.
+
+```php
+use Ubermuda\HealthCheckBundle\Testing\HealthChecks;
+
+$handler = HealthChecks::handler(
+    $connection,
+    mailerDsn: 'null://null',
+    mercureUrl: null,
+);
+```
+
+The defaults touch no network at all, so a test that does not care about the checks
+cannot hang on a socket. `HealthChecks::messengerConnection()` returns an in-memory
+SQLite connection carrying the one table the queue checks read, for tests that do
+care.
 
 ## Requirements
 

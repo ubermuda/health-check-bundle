@@ -14,6 +14,7 @@ use Ubermuda\HealthCheckBundle\Check\MailerSenderCheck;
 use Ubermuda\HealthCheckBundle\Check\MailerTransportCheck;
 use Ubermuda\HealthCheckBundle\Check\MercureCheck;
 use Ubermuda\HealthCheckBundle\Check\WorkerCheck;
+use Ubermuda\HealthCheckBundle\Command\Console\CheckSystemStatusCommand;
 use Ubermuda\HealthCheckBundle\Command\RunDiagnosticsHandler;
 use Ubermuda\HealthCheckBundle\Controller\ShowHealthController;
 use Ubermuda\HealthCheckBundle\Diagnostic;
@@ -96,6 +97,26 @@ final class BundleWiringTest extends KernelTestCase
         self::assertJsonStringEqualsJsonString('{"status":"ok"}', (string) $anonymous->getContent());
     }
 
+    public function test_a_test_container_can_replace_the_private_diagnostics_handler(): void
+    {
+        // The handler stays private: an application's WebTestCase swaps it out
+        // through the test container rather than redeclaring it public, and the
+        // services that depend on it get the replacement.
+        self::bootKernel();
+
+        $replacement = new RunDiagnosticsHandler([]);
+        self::getContainer()->set(RunDiagnosticsHandler::class, $replacement);
+
+        self::assertSame($replacement, self::getContainer()->get(RunDiagnosticsHandler::class));
+
+        $command = self::getContainer()->get(CheckSystemStatusCommand::class);
+        self::assertInstanceOf(CheckSystemStatusCommand::class, $command);
+        self::assertSame(
+            $replacement,
+            (new \ReflectionProperty(CheckSystemStatusCommand::class, 'runDiagnostics'))->getValue($command),
+        );
+    }
+
     public function test_every_key_the_shipped_checks_return_has_an_english_message(): void
     {
         self::bootKernel();
@@ -114,8 +135,11 @@ final class BundleWiringTest extends KernelTestCase
             self::assertArrayHasKey('check.'.$check.'.label', $catalogue);
         }
 
+        // Through the accessors, so the domain a consumer's template is told to
+        // use is the one the catalogue is actually registered under.
         foreach (DiagnosticState::cases() as $state) {
-            self::assertArrayHasKey('state.'.$state->value, $catalogue);
+            self::assertSame($domain, $state->translationDomain());
+            self::assertArrayHasKey($state->translationKey(), $catalogue);
         }
     }
 

@@ -24,12 +24,12 @@ class UbermudaHealthCheckBundle extends AbstractBundle
                 ->end()
                 ->scalarNode('probe_token')
                     ->defaultValue('')
-                    ->info('Shared secret a caller presents as an X-Probe-Token header to receive sensitive metadata. Empty — the default — means sensitive fields never appear, whatever header is sent.')
+                    ->info('Shared secret a caller presents as an X-Probe-Token header to receive sensitive metadata. Empty or null — the default, and what an unset environment variable resolves to — means sensitive fields never appear, whatever header is sent.')
                 ->end()
             ->end();
     }
 
-    /** @param array{path: string, probe_token: string} $config */
+    /** @param array{path: string, probe_token: string|null} $config */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
     {
         $builder->setParameter('ubermuda_health_check.path', $config['path']);

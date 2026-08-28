@@ -20,6 +20,25 @@ enum DiagnosticState: string
     case Failed = 'failed';
 
     /**
+     * Translation key of the state's own name. It resolves in the bundle's
+     * catalogue, never in the `$domain` the Diagnostic carries: that domain is
+     * the contributing check's, and the four state names are the bundle's
+     * whoever contributed the row.
+     *
+     * @return non-empty-string
+     */
+    public function translationKey(): string
+    {
+        return 'state.'.$this->value;
+    }
+
+    /** @return non-empty-string */
+    public function translationDomain(): string
+    {
+        return UbermudaHealthCheckBundle::TRANSLATION_DOMAIN;
+    }
+
+    /**
      * How loudly this state should be reported, so a page can show the worst
      * result of a set. Higher wins.
      */

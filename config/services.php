@@ -19,6 +19,7 @@ return static function (ContainerConfigurator $container): void {
             __DIR__.'/../src/Command/*View.php',
             __DIR__.'/../src/Diagnostic.php',
             __DIR__.'/../src/DiagnosticState.php',
+            __DIR__.'/../src/Testing/',
             __DIR__.'/../src/UbermudaHealthCheckBundle.php',
         ]);
 };

@@ -61,6 +61,19 @@ final class ShowHealthControllerTest extends TestCase
         self::assertJsonStringEqualsJsonString('{"status":"ok"}', (string) $response->getContent());
     }
 
+    public function test_a_null_probe_token_is_the_same_as_no_token(): void
+    {
+        // What %env(default::HEALTH_PROBE_TOKEN)% resolves to when the variable
+        // is unset or blank.
+        $response = $this->controller(
+            providers: [new StaticMetadataProvider(['version' => '77bc23c'])],
+            probeToken: null,
+        )(self::probeRequest('anything'));
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertJsonStringEqualsJsonString('{"status":"ok"}', (string) $response->getContent());
+    }
+
     public function test_sensitive_metadata_is_withheld_from_a_wrong_probe_token(): void
     {
         $response = $this->controller(
@@ -170,7 +183,7 @@ final class ShowHealthControllerTest extends TestCase
     }
 
     /** @param list<HealthMetadataProvider> $providers */
-    private function controller(array $providers = [], string $probeToken = ''): ShowHealthController
+    private function controller(array $providers = [], ?string $probeToken = ''): ShowHealthController
     {
         $connection = $this->createStub(Connection::class);
 
